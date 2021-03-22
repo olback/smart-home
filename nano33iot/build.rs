@@ -25,6 +25,8 @@ struct Config {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=Config.toml");
+
     let config_str = fs::read_to_string(INPUT).unwrap();
     let config: Config = toml::from_str(&config_str).unwrap();
 

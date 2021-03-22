@@ -80,22 +80,55 @@ fn main() -> ! {
         |duration| delay_us!(duration.as_micros() as u32),
     );
 
-    match nina_spi_transport.is_ok() {
-        true => log::info!("[WiFi NINA] SPI Transport configured"),
-        false => panic!("[WiFi NINA] SPI Transport configuration failed"),
+    let mut nina_wifi = loop {
+        match nina_spi_transport {
+            Ok(nst) => {
+                log::info!("[WiFi NINA] SPI Transport Configured");
+                break wifi_nina::Wifi::new(nst);
+            }
+            Err(ref e) => log::error!("[WiFi NINA] SPI Transport failed {:?}", e),
+        }
     };
 
-    let mut nina_wifi = wifi_nina::Wifi::new(nina_spi_transport.unwrap());
+    loop {
+        match nina_wifi.configure(
+            config::CONFIG.wifi.into_nina_config(),
+            Some(core::time::Duration::from_secs(10)),
+        ) {
+            Ok(_) => {
+                log::info!("[WiFi NINA] Connected to WiFi");
+                break;
+            }
+            Err(ref e) => log::error!("[WiFi NINA] Connection failed {:?}", e),
+        }
+    }
 
-    let conn = nina_wifi.configure(
-        config::CONFIG.wifi.into_nina_config(),
-        Some(core::time::Duration::from_secs(10)),
-    );
-    log::info!("{:#?}", conn);
+    let mut client = loop {
+        match nina_wifi.new_client() {
+            Ok(c) => {
+                log::info!("[WiFi NINA] Client OK");
+                break c;
+            }
+            Err(ref e) => log::error!("[WiFi NINA] Failed to get new client {:?}", e),
+        }
+    };
 
-    loop {}
+    loop {
+        match client.connect_ipv4(
+            &mut nina_wifi,
+            no_std_net::Ipv4Addr::new(192, 168, 43, 178),
+            config::CONFIG.server.port,
+            wifi_nina::types::ProtocolMode::Tcp,
+        ) {
+            Ok(_) => {
+                log::info!("[WiFi NINA] Connected to server");
+                break;
+            }
+            Err(ref e) => log::error!("Error connecting to server {:?}", e),
+        }
+    }
 
-    /* loop {
+    loop {
         delay_ms!(2000u16);
         let _ = led.set_high();
         let result_outside = dht22::Reading::read(delay!(), &mut sensor_outside);
@@ -104,7 +137,7 @@ fn main() -> ! {
         delay_ms!(10u8);
         log::info!("Inside: {:#?}", result_inside);
         let _ = led.set_low();
-    } */
+    }
 }
 
 #[panic_handler]
