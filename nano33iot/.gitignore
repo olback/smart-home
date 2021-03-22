@@ -1,4 +1,5 @@
 /target
 *.bin
 *.elf
-
+src/config.rs
+Config.toml

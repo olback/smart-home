@@ -1,0 +1,11 @@
+# Copy to 'Config.toml' and modify
+
+[wifi]
+ssid = ""
+key = ""
+
+[server]
+apikey = ""
+host = ""
+port = 5000
+tls = false

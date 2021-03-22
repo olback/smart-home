@@ -1,0 +1,42 @@
+pub struct WifiConfig {
+    pub ssid: &'static str,
+    pub key: &'static str
+}
+
+pub struct ServerConfig {
+    pub apikey: &'static str,
+    pub host: &'static str,
+    pub port: u16,
+    pub tls: bool
+}
+
+pub struct Config {
+    pub wifi: WifiConfig,
+    pub server: ServerConfig
+}
+
+pub const CONFIG: Config = Config {
+    wifi: WifiConfig {
+        ssid: "{ssid}",
+        key: "{key}",
+    },
+    server: ServerConfig {
+        apikey: "{apikey}",
+        host: "{host}",
+        port: {port},
+        tls: {tls},
+    }
+};
+
+impl WifiConfig {
+    pub fn into_nina_config(&self) -> wifi_nina::types::Config<'static> {
+        wifi_nina::types::Config::Station(
+            wifi_nina::types::StationConfig {
+                network: wifi_nina::types::NetworkConfig::Password {
+                    ssid: self.ssid.as_bytes(),
+                    password: self.key.as_bytes()
+                }
+            }
+        )
+    }
+}

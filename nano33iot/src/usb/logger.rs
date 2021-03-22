@@ -1,7 +1,8 @@
 use {
     super::{USB_BUS, USB_SERIAL},
+    arduino_nano33iot::prelude::*,
     cortex_m,
-    log::{LevelFilter, Metadata, Record, SetLoggerError},
+    log::{Metadata, Record, SetLoggerError},
 };
 
 static LOGGER: UsbSerialLogger = UsbSerialLogger;
@@ -10,7 +11,7 @@ pub(super) struct UsbSerialLogger;
 
 impl UsbSerialLogger {
     pub(super) fn init() -> Result<(), SetLoggerError> {
-        unsafe { log::set_logger_racy(&LOGGER).map(|()| log::set_max_level(LevelFilter::Trace)) }
+        unsafe { log::set_logger_racy(&LOGGER).map(|()| log::set_max_level(log::STATIC_MAX_LEVEL)) }
     }
 }
 
@@ -27,14 +28,15 @@ impl log::Log for UsbSerialLogger {
                         alloc::format!(
                             "[{}] {}#{}: {}\n",
                             record.level(),
-                            record.file().unwrap(),
+                            record.module_path().unwrap(),
                             record.line().unwrap(),
                             record.args()
                         )
                         .as_bytes(),
                     );
                 })
-            })
+            });
+            crate::DELAY.as_mut().unwrap().delay_ms(1u8);
         });
     }
 
