@@ -5,9 +5,8 @@ pub struct WifiConfig {
 
 pub struct ServerConfig {
     pub apikey: &'static str,
-    pub host: &'static str,
+    pub host: no_std_net::Ipv4Addr,
     pub port: u16,
-    pub tls: bool
 }
 
 pub struct Config {
@@ -22,14 +21,13 @@ pub const CONFIG: Config = Config {
     },
     server: ServerConfig {
         apikey: "{apikey}",
-        host: "{host}",
+        host: no_std_net::Ipv4Addr::new({oa}, {ob}, {oc}, {od}),
         port: {port},
-        tls: {tls},
     }
 };
 
 impl WifiConfig {
-    pub fn into_nina_config(&self) -> wifi_nina::types::Config<'static> {
+    pub const fn into_nina_config(&self) -> wifi_nina::types::Config<'static> {
         wifi_nina::types::Config::Station(
             wifi_nina::types::StationConfig {
                 network: wifi_nina::types::NetworkConfig::Password {

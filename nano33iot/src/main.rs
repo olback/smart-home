@@ -48,6 +48,8 @@ fn main() -> ! {
     let mut sensor_outside = pins.d2.into_readable_open_drain_output(&mut pins.port);
     let mut sensor_inside = pins.d3.into_readable_open_drain_output(&mut pins.port);
 
+    drop(led.set_high());
+
     usb::init(
         peripherals.USB,
         &mut clocks,
@@ -59,6 +61,8 @@ fn main() -> ! {
     usb::init_logger();
 
     delay_ms!(5000u16);
+
+    log::info!("Heap start: 0x{:x}", heap_start);
 
     let nina_spi = wifi::nina_spi_master(
         &mut clocks,
@@ -91,6 +95,7 @@ fn main() -> ! {
     };
 
     loop {
+        // This has an internal await_connection_state
         match nina_wifi.configure(
             config::CONFIG.wifi.into_nina_config(),
             Some(core::time::Duration::from_secs(10)),
@@ -103,6 +108,9 @@ fn main() -> ! {
         }
     }
 
+    log::info!("{:?}", nina_wifi.resolve("olback.net"));
+
+    log::info!("Creating client?");
     let mut client = loop {
         match nina_wifi.new_client() {
             Ok(c) => {
@@ -116,7 +124,7 @@ fn main() -> ! {
     loop {
         match client.connect_ipv4(
             &mut nina_wifi,
-            no_std_net::Ipv4Addr::new(192, 168, 43, 178),
+            config::CONFIG.server.host,
             config::CONFIG.server.port,
             wifi_nina::types::ProtocolMode::Tcp,
         ) {
@@ -127,6 +135,8 @@ fn main() -> ! {
             Err(ref e) => log::error!("Error connecting to server {:?}", e),
         }
     }
+
+    drop(led.set_low());
 
     loop {
         delay_ms!(2000u16);

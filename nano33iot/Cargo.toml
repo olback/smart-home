@@ -17,7 +17,7 @@ cortex-m-rt = "0.6"
 usb-device = { version = "0.2" }  # Only used for USB logging
 usbd-serial = { version = "0.1" }
 #wifi-nina = "0.1.2" # Wifi lib
-wifi-nina = { path = "../../olback-wifi-nina" }
+wifi-nina = { path = "../../wifi-nina" }
 no-std-net = "0.5"
 dht-sensor = "0.2.1" # Temp/Hum Sensor
 log = { version = "0.4", features = [ "max_level_info" ] }
