@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(default_alloc_error_handler)]
+#![feature(default_alloc_error_handler, panic_info_message)]
 
 extern crate alloc;
 
@@ -18,6 +18,7 @@ use {
 };
 
 mod config;
+mod measurement;
 mod usb;
 mod util;
 mod wifi;
@@ -121,7 +122,10 @@ fn main() -> ! {
         }
     };
 
+    drop(led.set_low());
+
     loop {
+        drop(led.set_high());
         match client.connect_ipv4(
             &mut nina_wifi,
             config::CONFIG.server.host,
@@ -130,28 +134,56 @@ fn main() -> ! {
         ) {
             Ok(_) => {
                 log::info!("[WiFi NINA] Connected to server");
-                break;
+                // break;
             }
-            Err(ref e) => log::error!("Error connecting to server {:?}", e),
+            Err(e) => {
+                log::error!("Error connecting to server {:?}", e);
+                delay_ms!(100u8);
+                continue;
+            }
         }
-    }
 
-    drop(led.set_low());
-
-    loop {
-        delay_ms!(2000u16);
-        let _ = led.set_high();
         let result_outside = dht22::Reading::read(delay!(), &mut sensor_outside);
         let result_inside = dht22::Reading::read(delay!(), &mut sensor_inside);
         log::info!("Outside: {:#?}", result_outside);
         delay_ms!(10u8);
         log::info!("Inside: {:#?}", result_inside);
-        let _ = led.set_low();
+
+        if result_outside.is_ok() {
+            let mreq = measurement::Measurement::new("outside", "", result_outside.unwrap())
+                .to_http_req("/api/temp-hum");
+            match client.send_all(&mut nina_wifi, mreq.as_bytes()) {
+                Ok(_) => log::info!("data sent ok"),
+                Err(e) => log::error!("failed to send data: {:?}", e),
+            };
+        }
+
+        drop(led.set_low());
+
+        delay_ms!(2000u16);
     }
 }
 
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
-    log::error!("{}", info);
+    // log::error!("{}", info);
+    let location = info.location();
+    log::error!("== begin panic ==");
+    log::error!(
+        "Location: {}#{}:{}",
+        location.map(|l| l.file()).unwrap_or("<unknown>"),
+        location.map(|l| l.line()).unwrap_or(0),
+        location.map(|l| l.column()).unwrap_or(0)
+    );
+    if let Some(s) = info.payload().downcast_ref::<&str>() {
+        log::error!("Cause: {:?}", s);
+    } else {
+        // log::error!("Payload: <unknown>");
+        match info.message() {
+            Some(m) => log::error!("Cause: {}", m),
+            None => log::error!("Cause: unknown"),
+        }
+    }
+    log::error!("== end panic ==");
     loop {}
 }
