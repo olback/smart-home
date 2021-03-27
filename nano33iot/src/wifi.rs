@@ -1,16 +1,10 @@
-use {
-    arduino_nano33iot::{
-        self as hal,
-        clock::GenericClockController,
-        gpio::{Floating, Input, Pa12, Pa13, Pa15, PfC, Port},
-        sercom::PadPin,
-        sercom::SPIMaster2,
-        time::MegaHertz,
-    },
-    wifi_nina::{
-        transport::{SpiError, SpiTransport},
-        Wifi,
-    },
+use arduino_nano33iot::{
+    self as hal,
+    clock::GenericClockController,
+    gpio::{Floating, Input, Pa12, Pa13, Pa15, PfC, Port},
+    sercom::PadPin,
+    sercom::SPIMaster2,
+    time::MegaHertz,
 };
 
 pub fn nina_spi_master(
