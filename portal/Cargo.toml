@@ -1,12 +1,13 @@
 [package]
-name = "rpi-control-center"
+name = "portal"
 version = "0.1.0"
-authors = ["Edwin Svensson <rpi-control-center@olback.net>"]
+authors = ["Edwin Svensson <rpi-portal@olback.net>"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-rppal = "0.11.3"
-tradfri = { path = "../../tradfri-rs" }
-
+rppal = { version = "0.11.3", features = [ "hal-unproven" ] }
+embedded-hal = "0.2"
+epd-waveshare = { path = "../../epd-waveshare", features = [ "graphics" ] }
+embedded-graphics = "0.6"
