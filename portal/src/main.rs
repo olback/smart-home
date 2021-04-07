@@ -1,11 +1,6 @@
 use {
     delay::Delay,
-    embedded_graphics::{
-        fonts::{Font24x32, Text},
-        prelude::*,
-        text_style,
-    },
-    embedded_hal::blocking::delay::DelayMs,
+    embedded_graphics::prelude::*,
     epd_waveshare::{
         epd7in5_v2::{Display7in5, EPD7in5},
         prelude::*,
@@ -14,11 +9,11 @@ use {
 };
 
 mod delay;
+mod screen;
+mod ui;
 
 fn main() {
-    let dev_info = DeviceInfo::new().expect("Failed to obtain device info");
-    println!("{:#?}", dev_info);
-
+    println!("Hello!");
     let mut spi = spi::Spi::new(
         spi::Bus::Spi0,
         spi::SlaveSelect::Ss1,
@@ -33,45 +28,36 @@ fn main() {
     let dc = gpio.get(25).expect("Failed to get dc pin").into_output();
     let rst = gpio.get(17).expect("Failed to get rst pin").into_output();
 
-    println!("1");
-
     let mut epd7in5v2 =
-        EPD7in5::new(&mut spi, cs, busy, dc, rst, Delay).expect("Failed to init display");
-
-    println!("2");
+        EPD7in5::new(&mut spi, cs, busy, dc, rst, &mut Delay).expect("Failed to init display");
 
     let mut display = Display7in5::default();
     display.set_rotation(epd_waveshare::graphics::DisplayRotation::Rotate180);
-    display.clear(epd_waveshare::color::White);
-    draw_text(&mut display, "test", 100, 100);
 
-    // epd7in5v2.set_background_color(epd_waveshare::color::Color::White);
+    // screen::Screen::Full {
+    //     time: "01:56",
+    //     date: "Wed 7 Apr",
+    //     outdoor: (-1.2, 90.3),
+    //     indoor: (21.8, 40.0),
+    // }
+    // .render(&mut display);
 
-    println!("3");
+    screen::Screen::Clock("12:34").render(&mut display);
+    // screen::Screen::Blank.render(&mut display);
 
     epd7in5v2
-        .update_frame(&mut spi, display.buffer())
+        .update_frame(&mut spi, display.buffer(), &mut Delay)
         .expect("Failed to update/display frame");
 
-    epd7in5v2.display_frame(&mut spi);
+    epd7in5v2
+        .display_frame(&mut spi, &mut Delay)
+        .expect("Failed to display frame");
 
-    println!("4");
+    epd7in5v2
+        .sleep(&mut spi, &mut Delay)
+        .expect("Failed to put display in sleep");
 
     std::thread::sleep(std::time::Duration::from_secs(5));
 
-    epd7in5v2
-        .sleep(&mut spi)
-        .expect("Failed to put display in sleep");
-
     println!("done");
-}
-
-fn draw_text(display: &mut Display7in5, text: &str, x: i32, y: i32) {
-    let _ = Text::new(text, Point::new(x, y))
-        .into_styled(text_style!(
-            font = Font24x32,
-            text_color = epd_waveshare::color::Black,
-            background_color = epd_waveshare::color::White
-        ))
-        .draw(display);
 }
