@@ -21,12 +21,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dcb6dd1c2376d2e096796e234a70e17e94cc2d5d54ff8ce42b28cef1d0d359a4"
 
 [[package]]
-name = "bitfont"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "60f03783bfee221ee6e014b2cf00983082f0d09edad63f8146c5e00152379405"
-
-[[package]]
 name = "byteorder"
 version = "1.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -54,7 +48,7 @@ dependencies = [
 [[package]]
 name = "epd-waveshare"
 version = "0.5.0"
-source = "git+https://github.com/olback/epd-waveshare.git?branch=fix-70#04476e6671c620751a8f8cf3d4496ac440efafc0"
+source = "git+https://github.com/olback/epd-waveshare.git?branch=fix-70#c3a4cde81559d6c0d2c6c6aa1767a23bd0cabb61"
 dependencies = [
  "bit_field",
  "embedded-graphics",
@@ -112,7 +106,6 @@ checksum = "546c37ac5d9e56f55e73b677106873d9d9f5190605e41a856503623648488cae"
 name = "portal"
 version = "0.1.0"
 dependencies = [
- "bitfont",
  "embedded-graphics",
  "embedded-hal",
  "epd-waveshare",

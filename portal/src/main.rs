@@ -1,11 +1,10 @@
 use {
     delay::Delay,
-    embedded_graphics::prelude::*,
     epd_waveshare::{
         epd7in5_v2::{Display7in5, EPD7in5},
         prelude::*,
     },
-    rppal::{gpio::Gpio, spi, system::DeviceInfo},
+    rppal::{gpio::Gpio, spi},
 };
 
 mod delay;

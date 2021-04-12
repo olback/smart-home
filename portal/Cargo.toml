@@ -10,8 +10,9 @@ edition = "2018"
 rppal = { version = "0.11.3", features = [ "hal-unproven" ] }
 embedded-hal = "0.2"
 epd-waveshare = { git = "https://github.com/olback/epd-waveshare.git", branch = "fix-70", features = [ "graphics" ] }
+# epd-waveshare = { path = "../../epd-waveshare", features = [ "graphics" ] }
 embedded-graphics = "0.6"
 profont = "0.4.0"
-bitfont = "0.1.0" # Convert text to 8x8 "pixels"
+# bitfont = "0.1.0" # Convert text to 8x8 "pixels"
 fontdue = "0.4.0" # Render fonts from otf/ttf/ttc
 lazy_static = "1.4"
