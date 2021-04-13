@@ -8,6 +8,11 @@ use embedded_graphics::{
     text_style,
 };
 
+/*
+    TODO: Use the translate() method instead of re-rendering shapes/text
+    https://docs.rs/embedded-graphics/0.6.2/embedded_graphics/fonts/struct.Text.html#method.translate
+*/
+
 mod pos;
 
 pub use {

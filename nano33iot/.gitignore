@@ -3,3 +3,4 @@
 *.elf
 src/config.rs
 Config.toml
+.vscode/.cortex-debug*

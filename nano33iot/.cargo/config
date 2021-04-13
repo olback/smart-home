@@ -7,11 +7,10 @@ target = "thumbv6m-none-eabi"
 #runner = "arm-none-eabi-gdb"
 runner = "./runner.sh"
 rustflags = [
-
   # This is needed if your flash or ram addresses are not aligned to 0x10000 in memory.x
   # See https://github.com/rust-embedded/cortex-m-quickstart/pull/95
   "-C", "link-args=--nmagic",
   "-C", "link-args=-Tlink.x",
-  "-C", "link-args=-zstack-size=8192"
+  #"-C", "link-args=-zstack-size=8192"
 ]
 

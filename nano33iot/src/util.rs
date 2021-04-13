@@ -18,3 +18,7 @@ macro_rules! delay_us {
         delay!().delay_us($t)
     };
 }
+
+pub fn round(n: f32) -> f32 {
+    n as i32 as f32
+}

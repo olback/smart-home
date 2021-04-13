@@ -15,9 +15,12 @@ use {
         prelude::*,
     },
     dht_sensor::{dht22, DhtReading},
+    display::{Display, XPos, YPos},
+    embedded_graphics::fonts::{Font12x16, Font6x12},
 };
 
 mod config;
+mod display;
 mod measurement;
 mod usb;
 mod util;
@@ -27,6 +30,8 @@ mod wifi;
 static ALLOCATOR: CortexMHeap = CortexMHeap::empty();
 
 static mut DELAY: Option<Delay> = None;
+static mut OUTSIDE: Option<dht22::Reading> = None;
+static mut INSIDE: Option<dht22::Reading> = None;
 
 #[entry]
 fn main() -> ! {
@@ -51,6 +56,43 @@ fn main() -> ! {
 
     drop(led.set_high());
 
+    let mut disp = Display::new(
+        &mut clocks,
+        400_000.hz(),
+        peripherals.SERCOM4,
+        &mut peripherals.PM,
+        pins.sda,
+        pins.scl,
+        &mut pins.port,
+    );
+
+    disp.write(
+        concat!("Data point ", env!("CARGO_PKG_VERSION")),
+        Font6x12,
+        XPos::Center(0),
+        YPos::Center(0),
+        true,
+    );
+    delay_ms!(1000u16);
+
+    disp.clear(false);
+    disp.write("USB Init", Font6x12, XPos::Left(0), YPos::Top(0), false);
+    disp.write(
+        "WiFi Connect",
+        Font6x12,
+        XPos::Left(0),
+        YPos::Top(12),
+        false,
+    );
+    disp.write(
+        "Create client",
+        Font6x12,
+        XPos::Left(0),
+        YPos::Top(24),
+        false,
+    );
+    disp.write("Trigger read", Font6x12, XPos::Left(0), YPos::Top(36), true);
+
     usb::init(
         peripherals.USB,
         &mut clocks,
@@ -60,11 +102,9 @@ fn main() -> ! {
         &mut core.NVIC,
     );
     usb::init_logger();
+    disp.write("done", Font6x12, XPos::Right(0), YPos::Top(0), true);
 
-    delay_ms!(5000u16);
-
-    log::info!("Heap start: 0x{:x}", heap_start);
-
+    // disp.clear();
     let nina_spi = wifi::nina_spi_master(
         &mut clocks,
         &mut peripherals.PM,
@@ -108,10 +148,8 @@ fn main() -> ! {
             Err(ref e) => log::error!("[WiFi NINA] Connection failed {:?}", e),
         }
     }
+    disp.write("done", Font6x12, XPos::Right(0), YPos::Top(12), true);
 
-    log::info!("{:?}", nina_wifi.resolve("olback.net"));
-
-    log::info!("Creating client?");
     let mut client = loop {
         match nina_wifi.new_client() {
             Ok(c) => {
@@ -121,11 +159,54 @@ fn main() -> ! {
             Err(ref e) => log::error!("[WiFi NINA] Failed to get new client {:?}", e),
         }
     };
+    disp.write("done", Font6x12, XPos::Right(0), YPos::Top(24), true);
+
+    let _ = dht22::Reading::read(delay!(), &mut sensor_outside);
+    let _ = dht22::Reading::read(delay!(), &mut sensor_inside);
+    delay_ms!(2000u16);
+    disp.write("done", Font6x12, XPos::Right(0), YPos::Top(36), true);
 
     drop(led.set_low());
 
     loop {
         drop(led.set_high());
+
+        unsafe {
+            OUTSIDE = dht22::Reading::read(delay!(), &mut sensor_outside).ok();
+            INSIDE = dht22::Reading::read(delay!(), &mut sensor_inside).ok();
+        }
+
+        disp.clear(false);
+        disp.write("In", Font12x16, XPos::Left(0), YPos::Top(8), false);
+        disp.write(
+            unsafe {
+                &INSIDE
+                    .map(|v| alloc::format!("{}°C", util::round(v.temperature)))
+                    .unwrap_or("Err".into())
+            },
+            Font12x16,
+            XPos::Right(0),
+            YPos::Top(8),
+            false,
+        );
+        disp.write("Out", Font12x16, XPos::Left(0), YPos::Bottom(8), false);
+        disp.write(
+            unsafe {
+                &OUTSIDE
+                    .map(|v| alloc::format!("{}°C", util::round(v.temperature)))
+                    .unwrap_or("Err".into())
+            },
+            Font12x16,
+            XPos::Right(0),
+            YPos::Bottom(8),
+            true,
+        );
+
+        drop(led.set_low());
+
+        delay_ms!(2000u16);
+
+        /*drop(led.set_high());
         match client.connect_ipv4(
             &mut nina_wifi,
             config::CONFIG.server.host,
@@ -160,7 +241,7 @@ fn main() -> ! {
 
         drop(led.set_low());
 
-        delay_ms!(2000u16);
+        delay_ms!(2000u16);*/
     }
 }
 

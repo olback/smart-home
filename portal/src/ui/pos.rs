@@ -1,5 +1,3 @@
-// TODO: Implement arithmetics
-
 #[derive(Debug)]
 pub enum XPos {
     Absolute(i32),

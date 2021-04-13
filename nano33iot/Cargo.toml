@@ -7,6 +7,13 @@ build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[profile.release]
+opt-level = "z"
+debug = true
+
+[profile.release.package."*"]
+opt-level = "z"
+
 [dependencies]
 #arduino_nano33iot = { version = "0.4.0", features = [ "rt", "usb", "unproven" ], default-features = false }
 arduino_nano33iot = { git = "https://github.com/atsamd-rs/atsamd", features = [ "rt", "usb", "unproven" ], default-features = false }
@@ -21,6 +28,8 @@ wifi-nina = { git = "https://github.com/olback/wifi-nina/", branch = "assertless
 no-std-net = "0.5"
 dht-sensor = "0.2.1" # Temp/Hum Sensor
 log = { version = "0.4", features = [ "max_level_info" ] }
+ssd1306 = { version = "0.5.1", features = [ "graphics" ] } # Display driver
+embedded-graphics = "0.6"
 
 [build-dependencies]
 serde = { version = "1.0", features = [ "derive" ] }

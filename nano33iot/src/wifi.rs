@@ -2,8 +2,7 @@ use arduino_nano33iot::{
     self as hal,
     clock::GenericClockController,
     gpio::{Floating, Input, Pa12, Pa13, Pa15, PfC, Port},
-    sercom::PadPin,
-    sercom::SPIMaster2,
+    sercom::{PadPin, SPIMaster2},
     time::MegaHertz,
 };
 
