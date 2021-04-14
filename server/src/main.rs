@@ -37,6 +37,7 @@ async fn rocket() -> rocket::Rocket {
         .mount(
             "/api/v1",
             rocket::routes![
+                // GET
                 routes::api::v1::api_root,
                 routes::api::v1::datetime::get_datetime,
                 // routes::api::v1::email::get_email,
@@ -45,6 +46,8 @@ async fn rocket() -> rocket::Rocket {
                 // routes::api::v1::sonos::get_sonos,
                 // routes::api::v1::tradfri::get_tradfri,
                 // routes::api::v1::weather::get_weather,
+                // POST
+                routes::api::v1::temphum::post_temphum
             ],
         )
         .attach(DbCon::fairing())

@@ -24,7 +24,7 @@ dependencies = [
 [[package]]
 name = "arduino_nano33iot"
 version = "0.4.0"
-source = "git+https://github.com/atsamd-rs/atsamd#a783ba9248f3130baf38c910b8ab1ebb6bbd66e2"
+source = "git+https://github.com/olback/atsamd?branch=wifi_nina_spi#52038b397277bd41934a714549c8a2cc0f4b4fa7"
 dependencies = [
  "atsamd-hal",
  "cortex-m 0.7.2",
@@ -57,7 +57,7 @@ dependencies = [
 [[package]]
 name = "atsamd-hal"
 version = "0.12.0"
-source = "git+https://github.com/atsamd-rs/atsamd#a783ba9248f3130baf38c910b8ab1ebb6bbd66e2"
+source = "git+https://github.com/olback/atsamd?branch=wifi_nina_spi#52038b397277bd41934a714549c8a2cc0f4b4fa7"
 dependencies = [
  "atsamd21g",
  "bitfield",
@@ -79,7 +79,7 @@ dependencies = [
 [[package]]
 name = "atsamd21g"
 version = "0.9.0"
-source = "git+https://github.com/atsamd-rs/atsamd#a783ba9248f3130baf38c910b8ab1ebb6bbd66e2"
+source = "git+https://github.com/olback/atsamd?branch=wifi_nina_spi#52038b397277bd41934a714549c8a2cc0f4b4fa7"
 dependencies = [
  "bare-metal",
  "cortex-m 0.6.7",
@@ -601,7 +601,6 @@ dependencies = [
 [[package]]
 name = "wifi-nina"
 version = "0.1.3-alpha.0"
-source = "git+https://github.com/olback/wifi-nina/?branch=assertless#505321118e45a0e7fd4ae3c47208387d142c6bfc"
 dependencies = [
  "arrayvec",
  "byteorder",

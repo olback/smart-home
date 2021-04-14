@@ -5,6 +5,7 @@ pub mod email;
 pub mod github;
 pub mod shoplistic;
 pub mod sonos;
+pub mod temphum;
 pub mod tradfri;
 pub mod weather;
 

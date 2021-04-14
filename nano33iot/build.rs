@@ -15,6 +15,7 @@ struct ServerConfig {
     apikey: String,
     host: std::net::Ipv4Addr,
     port: u16,
+    endpoint: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -44,6 +45,7 @@ fn main() {
         .replace("{oc}", &config.server.host.octets()[2].to_string())
         .replace("{od}", &config.server.host.octets()[3].to_string());
     template_str = template_str.replace("{port}", &config.server.port.to_string());
+    template_str = template_str.replace("{endpoint}", &config.server.endpoint);
 
     fs::write(OUTPUT, template_str).unwrap();
 }

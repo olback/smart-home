@@ -8,4 +8,4 @@ key = ""
 apikey = ""
 host = ""
 port = 5000
-tls = false
+endpoint = "/api/v1/temphum"

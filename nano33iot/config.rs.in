@@ -7,6 +7,7 @@ pub struct ServerConfig {
     pub apikey: &'static str,
     pub host: no_std_net::Ipv4Addr,
     pub port: u16,
+    pub endpoint: &'static str
 }
 
 pub struct Config {
@@ -23,6 +24,7 @@ pub const CONFIG: Config = Config {
         apikey: "{apikey}",
         host: no_std_net::Ipv4Addr::new({oa}, {ob}, {oc}, {od}),
         port: {port},
+        endpoint: "{endpoint}"
     }
 };
 

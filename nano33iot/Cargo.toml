@@ -16,7 +16,7 @@ opt-level = "z"
 
 [dependencies]
 #arduino_nano33iot = { version = "0.4.0", features = [ "rt", "usb", "unproven" ], default-features = false }
-arduino_nano33iot = { git = "https://github.com/atsamd-rs/atsamd", features = [ "rt", "usb", "unproven" ], default-features = false }
+arduino_nano33iot = { git = "https://github.com/olback/atsamd", branch = "wifi_nina_spi", features = [ "rt", "usb", "unproven" ], default-features = false }
 embedded-hal = "0.2"
 alloc-cortex-m = "0.4" # Heap allocation, used by format!, Vec, String etc.
 cortex-m = "0.7"
@@ -24,7 +24,8 @@ cortex-m-rt = "0.6"
 usb-device = { version = "0.2" }  # Only used for USB logging
 usbd-serial = { version = "0.1" }
 #wifi-nina = "0.1.2" # Wifi lib
-wifi-nina = { git = "https://github.com/olback/wifi-nina/", branch = "assertless" }
+#wifi-nina = { git = "https://github.com/olback/wifi-nina/", branch = "assertless" }
+wifi-nina = { path = "../../wifi-nina/" }
 no-std-net = "0.5"
 dht-sensor = "0.2.1" # Temp/Hum Sensor
 log = { version = "0.4", features = [ "max_level_info" ] }
