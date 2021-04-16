@@ -1,6 +1,6 @@
 #![no_std]
 #![no_main]
-#![feature(default_alloc_error_handler)]
+#![feature(default_alloc_error_handler, panic_info_message, asm)]
 
 extern crate alloc;
 
@@ -14,10 +14,19 @@ use {
         pac::{CorePeripherals, Peripherals},
         prelude::*,
     },
+    config::CONFIG,
+    core::time::Duration,
     dht_sensor::{dht22, DhtReading},
+    display::{Display, XPos, YPos},
+    embedded_graphics::fonts::{Font12x16, Font6x12, Font6x8},
+    measurement::Measurement,
+    wifi::WiFi,
 };
 
 mod config;
+mod display;
+mod measurement;
+#[cfg(feature = "usb_logging")]
 mod usb;
 mod util;
 mod wifi;
@@ -48,67 +57,195 @@ fn main() -> ! {
     let mut sensor_outside = pins.d2.into_readable_open_drain_output(&mut pins.port);
     let mut sensor_inside = pins.d3.into_readable_open_drain_output(&mut pins.port);
 
-    usb::init(
-        peripherals.USB,
+    drop(led.set_high());
+
+    // Init display
+    let mut disp = Display::new(
         &mut clocks,
+        400_000.hz(),
+        peripherals.SERCOM4,
         &mut peripherals.PM,
-        pins.usb_dm,
-        pins.usb_dp,
-        &mut core.NVIC,
+        pins.sda,
+        pins.scl,
+        &mut pins.port,
     );
-    usb::init_logger();
 
-    delay_ms!(5000u16);
+    disp.write(
+        concat!("Data point ", env!("CARGO_PKG_VERSION")),
+        Font6x12,
+        XPos::Center(0),
+        YPos::Center(0),
+        true,
+    );
+    delay_ms!(1000u16);
 
-    let nina_spi = wifi::nina_spi_master(
+    disp.clear(false);
+    disp.write("USB Init", Font6x12, XPos::Left(0), YPos::Top(0), false);
+    disp.write(
+        "WiFi Connect",
+        Font6x12,
+        XPos::Left(0),
+        YPos::Top(12),
+        false,
+    );
+    disp.write(
+        "Trigger read",
+        Font6x12,
+        XPos::Left(0),
+        YPos::Top(24),
+        false,
+    );
+
+    #[cfg(feature = "usb_logging")]
+    {
+        usb::init(
+            peripherals.USB,
+            &mut clocks,
+            &mut peripherals.PM,
+            pins.usb_dm,
+            pins.usb_dp,
+            &mut core.NVIC,
+        );
+        usb::init_logger();
+        disp.write("done", Font6x12, XPos::Right(0), YPos::Top(0), true);
+        log::info!("USB Init done");
+    }
+    #[cfg(not(feature = "usb_logging"))]
+    disp.write("skipped", Font6x12, XPos::Right(0), YPos::Top(0), true);
+
+    // Configure WiFi
+    let mut wifi = WiFi::new(
+        CONFIG.wifi.into_nina_config(),
         &mut clocks,
         &mut peripherals.PM,
         peripherals.SERCOM2,
         pins.nina_miso,
         pins.nina_mosi,
         pins.nina_sck,
-        &mut pins.port,
-    );
-
-    log::info!("[WiFi NINA] SPI Master configured");
-
-    let nina_spi_transport = wifi_nina::transport::SpiTransport::start(
-        nina_spi,
-        pins.nina_ack.into_floating_input(&mut pins.port),
-        pins.nina_resetn.into_open_drain_output(&mut pins.port),
-        pins.nina_cs.into_open_drain_output(&mut pins.port),
+        pins.nina_ack,
+        pins.nina_resetn,
+        pins.nina_cs,
         |duration| delay_us!(duration.as_micros() as u32),
-    );
+        &mut pins.port,
+    )
+    .unwrap();
+    while let Err(_) = wifi.configure(Some(Duration::from_secs(10))) {
+        disp.write("err", Font6x12, XPos::Right(0), YPos::Top(12), true);
+    }
+    disp.write("done", Font6x12, XPos::Right(0), YPos::Top(12), true);
+    log::info!("WiFi Connected");
 
-    match nina_spi_transport.is_ok() {
-        true => log::info!("[WiFi NINA] SPI Transport configured"),
-        false => panic!("[WiFi NINA] SPI Transport configuration failed"),
-    };
+    // First read
+    let _ = dht22::Reading::read(delay!(), &mut sensor_outside);
+    let _ = dht22::Reading::read(delay!(), &mut sensor_inside);
+    delay_ms!(2000u16);
+    disp.write("done", Font6x12, XPos::Right(0), YPos::Top(24), true);
+    log::info!("First read done");
 
-    let mut nina_wifi = wifi_nina::Wifi::new(nina_spi_transport.unwrap());
+    // TODO: Use a interrupt based timer to start measurements
 
-    let conn = nina_wifi.configure(
-        config::CONFIG.wifi.into_nina_config(),
-        Some(core::time::Duration::from_secs(10)),
-    );
-    log::info!("{:#?}", conn);
+    drop(led.set_low());
 
-    loop {}
+    // Main loop
 
-    /* loop {
-        delay_ms!(2000u16);
-        let _ = led.set_high();
-        let result_outside = dht22::Reading::read(delay!(), &mut sensor_outside);
+    loop {
+        drop(led.set_high());
+
+        // Read sensors
         let result_inside = dht22::Reading::read(delay!(), &mut sensor_inside);
-        log::info!("Outside: {:#?}", result_outside);
-        delay_ms!(10u8);
-        log::info!("Inside: {:#?}", result_inside);
-        let _ = led.set_low();
-    } */
+        let result_outside = dht22::Reading::read(delay!(), &mut sensor_outside);
+
+        // Write results to display
+        disp.clear(false);
+        disp.write("In", Font12x16, XPos::Left(0), YPos::Top(8), false);
+        disp.write(
+            &result_inside
+                .as_ref()
+                .map(|v| alloc::format!("{}°C", util::round(v.temperature)))
+                .unwrap_or("Error".into()),
+            Font12x16,
+            XPos::Right(0),
+            YPos::Top(8),
+            false,
+        );
+        log::info!("{:?}", result_inside);
+        disp.write("Out", Font12x16, XPos::Left(0), YPos::Bottom(8), false);
+        disp.write(
+            &result_outside
+                .as_ref()
+                .map(|v| alloc::format!("{}°C", util::round(v.temperature)))
+                .unwrap_or("Error".into()),
+            Font12x16,
+            XPos::Right(0),
+            YPos::Bottom(8),
+            true,
+        );
+        log::info!("{:?}", result_outside);
+
+        match result_outside
+            .map(|raw| Measurement::new("outside", "", raw).to_http_req(CONFIG.server.endpoint))
+        {
+            Ok(value) => match wifi.http_post(CONFIG.server.host, CONFIG.server.port, &value, 2) {
+                Ok(_) => {}
+                Err(err) => {
+                    disp.write(
+                        "WiFi/Server error",
+                        Font6x8,
+                        XPos::Center(0),
+                        YPos::Center(0),
+                        true,
+                    );
+                    log::error!("{}", err)
+                }
+            },
+            Err(err) => log::error!("{:?}", err),
+        };
+
+        match result_inside
+            .map(|raw| Measurement::new("inside", "", raw).to_http_req(CONFIG.server.endpoint))
+        {
+            Ok(value) => match wifi.http_post(CONFIG.server.host, CONFIG.server.port, &value, 2) {
+                Ok(_) => {}
+                Err(err) => {
+                    disp.write(
+                        "WiFi/Server error",
+                        Font6x8,
+                        XPos::Center(0),
+                        YPos::Center(0),
+                        true,
+                    );
+                    log::error!("{}", err);
+                }
+            },
+            Err(err) => log::error!("{:?}", err),
+        };
+
+        drop(led.set_low());
+
+        delay_ms!(2000u16);
+    }
 }
 
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {
-    log::error!("{}", info);
+    // log::error!("{}", info);
+    let location = info.location();
+    log::error!("== begin panic ==");
+    log::error!(
+        "Location: {}#{}:{}",
+        location.map(|l| l.file()).unwrap_or("<unknown>"),
+        location.map(|l| l.line()).unwrap_or(0),
+        location.map(|l| l.column()).unwrap_or(0)
+    );
+    if let Some(s) = info.payload().downcast_ref::<&str>() {
+        log::error!("Cause: {:?}", s);
+    } else {
+        // log::error!("Payload: <unknown>");
+        match info.message() {
+            Some(m) => log::error!("Cause: {}", m),
+            None => log::error!("Cause: unknown"),
+        }
+    }
+    log::error!("== end panic ==");
     loop {}
 }

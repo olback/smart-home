@@ -1,0 +1,43 @@
+[rocket]
+address = "0.0.0.0"
+port = 5000
+keep_alive = 0
+secret_key = "Iu68DGtvdKmffVt8bxE7ULSAfnUzef+T9bQQuGZ0wII="
+
+[database]
+address = "127.0.0.1"
+port = 5432
+username = "dev"
+password = "dev"
+database = "smart-home"
+pool_size = 5
+
+[datetime]
+timezone = "Europe/Stockholm"
+
+[sonos]
+
+[tradfri]
+ip = "192.168.0.110"
+key_name = "smart-home"
+key = "whatever"
+
+[weather]
+api_key = "whatever"
+lat = 12.3456
+long = 23.4567
+
+[shoplistic]
+address = "https://api.shoplistic.com/v1"
+api_key = "whatever"
+
+[email.'test@example.com']
+host = "mail.example.com"
+port = 993
+username = "test"
+password = "whatever"
+folder = "INBOX"
+
+[github]
+api_key = "whatever"
+

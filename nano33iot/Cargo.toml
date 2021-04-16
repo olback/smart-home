@@ -1,26 +1,47 @@
 [package]
 name = "nano33iot"
 version = "0.1.0"
-authors = ["Edwin Svensson <nano33@olback.net>"]
+authors = ["Edwin Svensson <nano33iot@olback.net>"]
 edition = "2018"
 build = "build.rs"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[profile.release]
+opt-level = "z"
+debug = true
+
+[profile.release.package."*"]
+opt-level = "z"
+
 [dependencies]
+# Board support
 #arduino_nano33iot = { version = "0.4.0", features = [ "rt", "usb", "unproven" ], default-features = false }
-arduino_nano33iot = { path = "../../atsamd/boards/arduino_nano33iot", features = [ "rt", "usb", "unproven" ], default-features = false }
+arduino_nano33iot = { git = "https://github.com/olback/atsamd.git", branch = "wifi_nina_spi", features = [ "rt", "usb", "unproven" ], default-features = false }
 embedded-hal = "0.2"
 alloc-cortex-m = "0.4" # Heap allocation, used by format!, Vec, String etc.
 cortex-m = "0.7"
 cortex-m-rt = "0.6"
-usb-device = { version = "0.2" }  # Only used for USB logging
-usbd-serial = { version = "0.1" }
+# USB Logging
+usb-device = { version = "0.2", optional = true }  # Only used for USB logging
+usbd-serial = { version = "0.1", optional = true}
+# WiFi 
 #wifi-nina = "0.1.2" # Wifi lib
-wifi-nina = { path = "../../jeamland-wifi-nina" }
-dht-sensor = "0.2.1" # Temp/Hum Sensor
+wifi-nina = { git = "https://github.com/olback/wifi-nina.git", branch = "assertless-nocheck" }
+no-std-net = "0.5"
+# Temp/Hum sensor
+dht-sensor = "0.2.1"
+# Logging
 log = { version = "0.4", features = [ "max_level_info" ] }
+# Display
+ssd1306 = { version = "0.5.1", features = [ "graphics" ] } # Display driver
+embedded-graphics = "0.6"
+
+[features]
+default = []
+usb_logging = [ "usb-device", "usbd-serial" ]
 
 [build-dependencies]
 serde = { version = "1.0", features = [ "derive" ] }
 toml = "0.5"
+

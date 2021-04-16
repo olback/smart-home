@@ -1,0 +1,18 @@
+{
+    "configurations": [
+        {
+            "cwd": "${workspaceRoot}",
+            "executable": "/home/olback/.cargo-target/thumbv6m-none-eabi/release/nano33iot",
+            "name": "Debug Microcontroller",
+            "request": "launch",
+            "type": "cortex-debug",
+            "servertype": "openocd",
+            "svdFile": "${workspaceRoot}/ATSAMD21G18A.svd",
+            "configFiles": [
+                "/usr/share/openocd/scripts/interface/cmsis-dap.cfg",
+                "/usr/share/openocd/scripts/target/at91samdXX.cfg"
+            ],
+            "preLaunchTask": "BuildUpload"
+        }
+    ]
+}

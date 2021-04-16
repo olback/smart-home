@@ -13,9 +13,9 @@ struct WiFiConfig {
 #[derive(Debug, Deserialize)]
 struct ServerConfig {
     apikey: String,
-    host: String,
+    host: std::net::Ipv4Addr,
     port: u16,
-    tls: bool,
+    endpoint: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -25,6 +25,8 @@ struct Config {
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=Config.toml");
+
     let config_str = fs::read_to_string(INPUT).unwrap();
     let config: Config = toml::from_str(&config_str).unwrap();
 
@@ -36,9 +38,14 @@ fn main() {
 
     // Server
     template_str = template_str.replace("{apikey}", &config.server.apikey);
-    template_str = template_str.replace("{host}", &config.server.host);
+    // template_str = template_str.replace("{host}", &config.server.host);
+    template_str = template_str
+        .replace("{oa}", &config.server.host.octets()[0].to_string())
+        .replace("{ob}", &config.server.host.octets()[1].to_string())
+        .replace("{oc}", &config.server.host.octets()[2].to_string())
+        .replace("{od}", &config.server.host.octets()[3].to_string());
     template_str = template_str.replace("{port}", &config.server.port.to_string());
-    template_str = template_str.replace("{tls}", &config.server.tls.to_string());
+    template_str = template_str.replace("{endpoint}", &config.server.endpoint);
 
     fs::write(OUTPUT, template_str).unwrap();
 }

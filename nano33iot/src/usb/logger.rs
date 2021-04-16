@@ -36,8 +36,8 @@ impl log::Log for UsbSerialLogger {
                     );
                 })
             });
-            crate::DELAY.as_mut().unwrap().delay_ms(1u8);
         });
+        unsafe { crate::DELAY.as_mut().unwrap().delay_ms(1u8) };
     }
 
     fn flush(&self) {}
