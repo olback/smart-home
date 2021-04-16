@@ -1,5 +1,5 @@
 use {
-    figment::{providers::Serialized, Figment},
+    figment::{providers::Env, providers::Serialized, Figment},
     serde::{Deserialize, Serialize},
     std::collections::HashMap,
     toml,
@@ -115,6 +115,7 @@ impl Config {
         Figment::from(rocket::Config::default())
             .merge(Serialized::defaults(self.rocket.clone()))
             .merge(Serialized::defaults(databases))
+            .merge(Env::prefixed("ROCKET_").global())
     }
 }
 
