@@ -601,6 +601,7 @@ dependencies = [
 [[package]]
 name = "wifi-nina"
 version = "0.1.3-alpha.0"
+source = "git+https://github.com/olback/wifi-nina/?branch=assertless-nocheck#217c2fccd66c75734c90d781fc40598333e9794f"
 dependencies = [
  "arrayvec",
  "byteorder",

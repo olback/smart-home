@@ -8,19 +8,17 @@ use {
     alloc_cortex_m::CortexMHeap,
     arduino_nano33iot::{
         self as hal,
-        clock::{ClockGenId, ClockSource, GenericClockController},
+        clock::GenericClockController,
         delay::Delay,
         entry,
-        pac::{CorePeripherals, Peripherals, RTC},
+        pac::{CorePeripherals, Peripherals},
         prelude::*,
-        rtc,
-        timer::TimerCounter5,
     },
     config::CONFIG,
     core::time::Duration,
     dht_sensor::{dht22, DhtReading},
     display::{Display, XPos, YPos},
-    embedded_graphics::fonts::{Font12x16, Font6x12},
+    embedded_graphics::fonts::{Font12x16, Font6x12, Font6x8},
     measurement::Measurement,
     wifi::WiFi,
 };
@@ -28,6 +26,7 @@ use {
 mod config;
 mod display;
 mod measurement;
+#[cfg(feature = "usb_logging")]
 mod usb;
 mod util;
 mod wifi;
@@ -96,22 +95,27 @@ fn main() -> ! {
         YPos::Top(24),
         false,
     );
-    disp.write("Timer setup", Font6x12, XPos::Left(0), YPos::Top(36), true);
 
-    usb::init(
-        peripherals.USB,
-        &mut clocks,
-        &mut peripherals.PM,
-        pins.usb_dm,
-        pins.usb_dp,
-        &mut core.NVIC,
-    );
-    usb::init_logger();
-    disp.write("done", Font6x12, XPos::Right(0), YPos::Top(0), true);
-    log::info!("USB Init done");
+    #[cfg(feature = "usb_logging")]
+    {
+        usb::init(
+            peripherals.USB,
+            &mut clocks,
+            &mut peripherals.PM,
+            pins.usb_dm,
+            pins.usb_dp,
+            &mut core.NVIC,
+        );
+        usb::init_logger();
+        disp.write("done", Font6x12, XPos::Right(0), YPos::Top(0), true);
+        log::info!("USB Init done");
+    }
+    #[cfg(not(feature = "usb_logging"))]
+    disp.write("skipped", Font6x12, XPos::Right(0), YPos::Top(0), true);
 
     // Configure WiFi
     let mut wifi = WiFi::new(
+        CONFIG.wifi.into_nina_config(),
         &mut clocks,
         &mut peripherals.PM,
         peripherals.SERCOM2,
@@ -125,12 +129,9 @@ fn main() -> ! {
         &mut pins.port,
     )
     .unwrap();
-    // while let Err(_) = wifi.connect_wifi(
-    //     CONFIG.wifi.into_nina_config(),
-    //     Some(Duration::from_secs(10)),
-    // ) {
-    //     disp.write("err", Font6x12, XPos::Right(0), YPos::Top(12), true);
-    // }
+    while let Err(_) = wifi.configure(Some(Duration::from_secs(10))) {
+        disp.write("err", Font6x12, XPos::Right(0), YPos::Top(12), true);
+    }
     disp.write("done", Font6x12, XPos::Right(0), YPos::Top(12), true);
     log::info!("WiFi Connected");
 
@@ -141,36 +142,7 @@ fn main() -> ! {
     disp.write("done", Font6x12, XPos::Right(0), YPos::Top(24), true);
     log::info!("First read done");
 
-    // TODO: Use RTC instead?
-    // let gclk1 = clocks.gclk1();
-    // let tc45 = &clocks.tc4_tc5(&gclk1).unwrap();
-    // let mut tim5 = TimerCounter5::tc5_(tc45, peripherals.TC5, &mut peripherals.PM);
-    // tim5.start(1.s()); // Panics?
-    // tim5.enable_interrupt();
-    // unsafe {
-    //     core.NVIC.set_priority(interrupt::TC5, 2);
-    //     hal::pac::NVIC::unmask(interrupt::TC5);
-    // }
-
-    // hal::pac::NVIC::unpend(arduino_nano33iot::pac::interrupt::TC5);
-    // unsafe { hal::pac::NVIC::unmask(arduino_nano33iot::pac::interrupt::TC5) };
-    //
-
-    // let timer_clock = clocks
-    //     .configure_gclk_divider_and_source(ClockGenId::GCLK1, 1, ClockSource::OSC32K, false)
-    //     .unwrap();
-    // let timer_clock = clocks.gclk0();
-    // let rtc_clock = clocks.rtc(&timer_clock).unwrap();
-    // let mut timer = rtc::Rtc::count32_mode(peripherals.RTC, rtc_clock.freq(), &mut peripherals.PM);
-    // timer.reset_and_compute_prescaler(1.hz());
-    // timer.enable_interrupt();
-    // timer.start(2.hz());
-    // unsafe {
-    //     core.NVIC.set_priority(interrupt::RTC, 2);
-    //     hal::pac::NVIC::unmask(interrupt::RTC);
-    // }
-    disp.write("done", Font6x12, XPos::Right(0), YPos::Top(36), true);
-    log::info!("Timer setup done");
+    // TODO: Use a interrupt based timer to start measurements
 
     drop(led.set_low());
 
@@ -180,8 +152,8 @@ fn main() -> ! {
         drop(led.set_high());
 
         // Read sensors
-        let result_outside = dht22::Reading::read(delay!(), &mut sensor_outside);
         let result_inside = dht22::Reading::read(delay!(), &mut sensor_inside);
+        let result_outside = dht22::Reading::read(delay!(), &mut sensor_outside);
 
         // Write results to display
         disp.clear(false);
@@ -196,6 +168,7 @@ fn main() -> ! {
             YPos::Top(8),
             false,
         );
+        log::info!("{:?}", result_inside);
         disp.write("Out", Font12x16, XPos::Left(0), YPos::Bottom(8), false);
         disp.write(
             &result_outside
@@ -207,60 +180,51 @@ fn main() -> ! {
             YPos::Bottom(8),
             true,
         );
+        log::info!("{:?}", result_outside);
 
-        // Send results to server
-        // match wifi.connect_wifi(
-        //     CONFIG.wifi.into_nina_config(),
-        //     Some(Duration::from_secs(10)),
-        // ) {
-        //     Ok(_) => {
-        //         match result_outside.map(|raw| {
-        //             Measurement::new("outside", "", raw).to_http_req(CONFIG.server.endpoint)
-        //         }) {
-        //             Ok(value) => {
-        //                 match wifi.http_post(CONFIG.server.host, CONFIG.server.port, &value) {
-        //                     Ok(_) => {}
-        //                     Err(err) => log::error!("{}", err),
-        //                 }
-        //             }
-        //             Err(err) => log::error!("{:?}", err),
-        //         };
+        match result_outside
+            .map(|raw| Measurement::new("outside", "", raw).to_http_req(CONFIG.server.endpoint))
+        {
+            Ok(value) => match wifi.http_post(CONFIG.server.host, CONFIG.server.port, &value, 2) {
+                Ok(_) => {}
+                Err(err) => {
+                    disp.write(
+                        "WiFi/Server error",
+                        Font6x8,
+                        XPos::Center(0),
+                        YPos::Center(0),
+                        true,
+                    );
+                    log::error!("{}", err)
+                }
+            },
+            Err(err) => log::error!("{:?}", err),
+        };
 
-        //         match result_inside.map(|raw| {
-        //             Measurement::new("inside", "", raw).to_http_req(CONFIG.server.endpoint)
-        //         }) {
-        //             Ok(value) => {
-        //                 match wifi.http_post(CONFIG.server.host, CONFIG.server.port, &value) {
-        //                     Ok(_) => {}
-        //                     Err(err) => log::error!("{}", err),
-        //                 }
-        //             }
-        //             Err(err) => log::error!("{:?}", err),
-        //         };
-        //     }
-        //     Err(e) => log::error!("{:?}", e),
-        // };
+        match result_inside
+            .map(|raw| Measurement::new("inside", "", raw).to_http_req(CONFIG.server.endpoint))
+        {
+            Ok(value) => match wifi.http_post(CONFIG.server.host, CONFIG.server.port, &value, 2) {
+                Ok(_) => {}
+                Err(err) => {
+                    disp.write(
+                        "WiFi/Server error",
+                        Font6x8,
+                        XPos::Center(0),
+                        YPos::Center(0),
+                        true,
+                    );
+                    log::error!("{}", err);
+                }
+            },
+            Err(err) => log::error!("{:?}", err),
+        };
 
         drop(led.set_low());
 
         delay_ms!(2000u16);
     }
 }
-// use arduino_nano33iot::pac::interrupt;
-// #[interrupt]
-// fn TC5() {
-//     // hal::pac::NVIC::
-//     // hal::pac::NVIC::unpend(arduino_nano33iot::pac::interrupt::TC5);
-//     unsafe {
-//         hal::pac::TC5::ptr()
-//             .as_ref()
-//             .unwrap()
-//             .count16()
-//             .intflag
-//             .modify(|_, w| w.ovf().set_bit());
-//     }
-//     log::info!("rtc int");
-// }
 
 #[panic_handler]
 fn panic_handler(info: &core::panic::PanicInfo) -> ! {

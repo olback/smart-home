@@ -11,6 +11,7 @@ use {
     ssd1306::prelude::*,
 };
 
+#[allow(dead_code)]
 pub enum XPos {
     Absolute(i32),
     Left(i32),
@@ -18,6 +19,7 @@ pub enum XPos {
     Right(i32),
 }
 
+#[allow(dead_code)]
 pub enum YPos {
     Absolute(i32),
     Top(i32),
@@ -25,6 +27,7 @@ pub enum YPos {
     Bottom(i32),
 }
 
+#[allow(dead_code)]
 impl XPos {
     pub fn to_absolute(&self, display_width: u32) -> i32 {
         match self {
@@ -45,6 +48,7 @@ impl XPos {
     }
 }
 
+#[allow(dead_code)]
 impl YPos {
     pub fn to_absolute(&self, display_height: u32) -> i32 {
         match self {

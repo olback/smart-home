@@ -3,15 +3,12 @@ use {
         self as hal,
         clock::GenericClockController,
         gpio::{Floating, Input, OpenDrain, Output, Pa12, Pa13, Pa14, Pa15, Pa28, Pa8, PfC, Port},
-        sercom::{PadPin, SPIMaster2},
+        sercom::SPIMaster2,
         time::MegaHertz,
     },
     core::time::Duration,
     no_std_net::Ipv4Addr,
-    wifi_nina::{
-        transport::SpiTransport,
-        types::{ConnectionState, ProtocolMode},
-    },
+    wifi_nina::{transport::SpiTransport, types::ProtocolMode},
 };
 
 type WiFiTransport = SpiTransport<
@@ -32,10 +29,12 @@ type WiFiResult<T> = core::result::Result<T, WiFiError>;
 pub struct WiFi {
     client: wifi_nina::Client<WiFiTransport>,
     wifi: wifi_nina::Wifi<WiFiTransport>,
+    config: wifi_nina::types::Config<'static>,
 }
 
 impl WiFi {
     pub fn new(
+        config: wifi_nina::types::Config<'static>,
         clocks: &mut GenericClockController,
         pm: &mut hal::pac::PM,
         sercom2: hal::pac::SERCOM2,
@@ -68,33 +67,44 @@ impl WiFi {
         .unwrap();
         let mut wifi = wifi_nina::Wifi::new(transport);
         Ok(Self {
+            config,
             client: wifi.new_client().map_err(|_| "Failed to create client")?,
             wifi,
         })
     }
 
-    pub fn connect_wifi(
-        &mut self,
-        config: wifi_nina::types::Config<'static>,
-        timeout: Option<Duration>,
-    ) -> WiFiResult<()> {
+    pub fn configure(&mut self, timeout: Option<Duration>) -> WiFiResult<()> {
         self.wifi
-            .configure(config, timeout)
+            .configure(self.config.clone(), timeout)
             .map_err(|_| "Failed to connect to network")
     }
 
-    fn connect_ipv4(&mut self, ip: Ipv4Addr, port: u16) -> WiFiResult<()> {
-        self.client
+    fn connect_ipv4(&mut self, ip: Ipv4Addr, port: u16, max_tries: u8) -> WiFiResult<()> {
+        match self
+            .client
             .connect_ipv4(&mut self.wifi, ip, port, ProtocolMode::Tcp)
-            .map_err(|err| {
-                log::error!("{:?}", err);
-                "Failed to connect to host"
-            })?;
-        Ok(())
+        {
+            Ok(_) => Ok(()),
+            Err(e) => match e {
+                wifi_nina::Error::StartClientByIp if max_tries > 0 => {
+                    log::error!("{} {:?}", max_tries, e);
+                    self.configure(Some(Duration::from_secs(10)))?;
+                    self.connect_ipv4(ip, port, max_tries - 1)?;
+                    Ok(())
+                }
+                _ => Err("Failed to connect to host"),
+            },
+        }
     }
 
-    pub fn http_post(&mut self, ip: Ipv4Addr, port: u16, data: &str) -> WiFiResult<()> {
-        self.connect_ipv4(ip, port)?;
+    pub fn http_post(
+        &mut self,
+        ip: Ipv4Addr,
+        port: u16,
+        data: &str,
+        max_tries: u8,
+    ) -> WiFiResult<()> {
+        self.connect_ipv4(ip, port, max_tries)?;
         self.client
             .send_all(&mut self.wifi, data.as_bytes())
             .map_err(|_| "Failed to send data")?;
