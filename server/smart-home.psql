@@ -1,0 +1,27 @@
+DROP TABLE IF EXISTS locations CASCADE;
+CREATE TABLE locations (
+    id              BIGSERIAL PRIMARY KEY,
+    name            VARCHAR(64) NOT NULL UNIQUE,
+    title           VARCHAR(64),
+    description     VARCHAR(512)
+);
+
+DROP TABLE IF EXISTS temperature_measurements CASCADE;
+CREATE TABLE temperature_measurements (
+    id              BIGSERIAL PRIMARY KEY,
+    location        BIGSERIAL NOT NULL,
+    value           REAL NOT NULL,
+    CONSTRAINT      fk_location FOREIGN KEY (id) REFERENCEs locations(id)
+);
+
+DROP TABLE IF EXISTS humidity_measurements CASCADE;
+CREATE TABLE humidity_measurements (
+    id              BIGSERIAL PRIMARY KEY,
+    location        BIGSERIAL NOT NULL,
+    value           REAL NOT NULL,
+    CONSTRAINT      fk_location FOREIGN KEY (id) REFERENCEs locations(id)
+);
+
+
+
+
