@@ -58,3 +58,28 @@ returns boolean as $$
     END
 $$ language 'plpgsql';
 
+DROP VIEW IF EXISTS get_latest_temp;
+CREATE VIEW get_latest_temp AS SELECT DISTINCT ON (location_id)
+    temperature_measurements.location AS location_id,
+    locations.name AS location_name,
+    locations.title AS location_title,
+    locations.description AS location_description,
+    temperature_measurements.value,
+    temperature_measurements.timestamp
+FROM temperature_measurements
+JOIN locations on locations.id = location
+ORDER BY location, timestamp DESC;
+
+DROP VIEW IF EXISTS get_latest_hum;
+CREATE VIEW get_latest_hum AS SELECT DISTINCT ON (location_id)
+    humidity_measurements.location AS location_id,
+    locations.name AS location_name,
+    locations.title AS location_title,
+    locations.description AS location_description,
+    humidity_measurements.value,
+    humidity_measurements.timestamp
+FROM humidity_measurements
+JOIN locations on locations.id = location
+ORDER BY location, timestamp DESC;
+
+
