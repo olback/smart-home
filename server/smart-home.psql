@@ -1,3 +1,5 @@
+SET TIMEZONE='Europe/Stockholm';
+
 DROP TABLE IF EXISTS locations CASCADE;
 CREATE TABLE locations (
     id              BIGSERIAL PRIMARY KEY,
@@ -9,19 +11,50 @@ CREATE TABLE locations (
 DROP TABLE IF EXISTS temperature_measurements CASCADE;
 CREATE TABLE temperature_measurements (
     id              BIGSERIAL PRIMARY KEY,
-    location        BIGSERIAL NOT NULL,
+    location        BIGINT NOT NULL,
     value           REAL NOT NULL,
-    CONSTRAINT      fk_location FOREIGN KEY (id) REFERENCEs locations(id)
+    timestamp       TIMESTAMP DEFAULT NOW() NOT NULL,
+    CONSTRAINT      fk_location FOREIGN KEY (location) REFERENCES locations(id)
 );
 
 DROP TABLE IF EXISTS humidity_measurements CASCADE;
 CREATE TABLE humidity_measurements (
     id              BIGSERIAL PRIMARY KEY,
-    location        BIGSERIAL NOT NULL,
+    location        BIGINT NOT NULL,
     value           REAL NOT NULL,
-    CONSTRAINT      fk_location FOREIGN KEY (id) REFERENCEs locations(id)
+    timestamp       TIMESTAMP DEFAULT NOW() NOT NULL,
+    CONSTRAINT      fk_location FOREIGN KEY (location) REFERENCES locations(id)
 );
 
+drop function if exists insert_temp;
+create function insert_temp(_location varchar(64), _temp real)
+returns boolean as $$
+    DECLARE
+    _id bigint;
+    BEGIN
+        _id = (select id from locations where locations.name = _location group by locations.id);
+        if _id != 0 then
+            insert into temperature_measurements (location, value) values (_id, _temp);
+            return true;
+        else
+            return false;
+        end if;
+    END
+$$ language 'plpgsql';
 
-
+drop function if exists insert_hum;
+create function insert_hum(_location varchar(64), _temp real)
+returns boolean as $$
+    DECLARE
+    _id bigint;
+    BEGIN
+        _id = (select id from locations where locations.name = _location group by locations.id);
+        if _id != 0 then
+            insert into humidity_measurements (location, value) values (_id, _temp);
+            return true;
+        else
+            return false;
+        end if;
+    END
+$$ language 'plpgsql';
 
