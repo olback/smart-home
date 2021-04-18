@@ -1,0 +1,59 @@
+<div class="days">
+    <div class="day" *ngFor="let day of days">
+        <mat-card>
+            <mat-card-title>{{day.title}}</mat-card-title>
+            <mat-card-content>
+                <div class="main-info">
+                    <mat-icon class="material-icons-outlined">{{day.icon}}</mat-icon>
+                    <span>{{day.high}}</span>
+                    <span> / </span>
+                    <span>{{day.low}}</span>
+                    <span> °C</span>
+                </div>
+                <hr>
+                <div class="hourly" onwheel="this.scrollBy(event.deltaY, 0)">
+                    <div class="hour" *ngFor="let hour of day.hourly">
+                        <span>{{hour.time}}</span>
+                        <mat-icon class="material-icons-outlined">{{hour.icon}}</mat-icon>
+                        <span>{{hour.temperature}}°C</span>
+                    </div>
+                </div>
+                <hr>
+                <div class="other">
+                    <div class="cell">
+                        <span class="title">Precipitation probability</span>
+                        <span class="value">1%</span>
+                    </div>
+                    <div class="cell">
+                        <span class="title">Precipitation</span>
+                        <span class="value">0.0 mm</span>
+                    </div>
+                    <div class="cell">
+                        <span class="title">ENE wind</span>
+                        <span class="value">16.7 km/h</span>
+                    </div>
+                    <div class="cell">
+                        <span class="title">Perceived temperature</span>
+                        <span class="value">2°C</span>
+                    </div>
+                    <div class="cell">
+                        <span class="title">Humidity</span>
+                        <span class="value">48%</span>
+                    </div>
+                    <div class="cell">
+                        <span class="title">Visibility</span>
+                        <span class="value">16.1 km</span>
+                    </div>
+                    <div class="cell">
+                        <span class="title">UV</span>
+                        <span class="value">Lowest</span>
+                    </div>
+                    <div class="cell">
+                        <span class="title">Pressure</span>
+                        <span class="value">1025 hPa</span>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</div>

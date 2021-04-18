@@ -1,0 +1,20 @@
+<mat-card *ngFor="let card of cards">
+    <mat-card-title>{{card.cardTitle}}</mat-card-title>
+    <mat-card-content>
+        <div class="chart-wrapper" *ngFor="let chart of card.charts">
+            <canvas baseChart [datasets]="chart.lineChartData" [labels]="chart.lineChartLabels"
+                [options]="chart.lineChartOptions" [colors]="chart.lineChartColors" [legend]="chart.lineChartLegend"
+                [chartType]="chart.lineChartType" [plugins]="chart.lineChartPlugins">
+            </canvas>
+        </div>
+    </mat-card-content>
+    <mat-card-actions align="end">
+        <button mat-button>All time </button>
+        <button mat-button>1 year</button>
+        <button mat-button>3 months</button>
+        <button mat-button>1 month</button>
+        <button mat-button>7 days</button>
+        <button mat-button>3 days</button>
+        <button mat-button>1 day</button>
+    </mat-card-actions>
+</mat-card>

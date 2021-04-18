@@ -1,0 +1,54 @@
+div.tradfri {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 1rem;
+}
+
+mat-card {
+    width: 100%;
+    text-align: center;
+    max-width: calc(100% - 2rem);
+}
+
+mat-icon {
+    $fs: 7rem;
+    font-size: $fs;
+    // (-(font-size / 2)) + 1rem
+    transform: translateX(calc((#{$fs} / -2) + 1rem));
+}
+
+.colors {
+    max-width: 100%;
+    overflow: auto;
+    white-space: nowrap;
+    text-align: center;
+    .color {
+        height: 1.5rem;
+        width: 1.5rem;
+        display: inline-block;
+        border-radius: 50%;
+        border: 1px solid #333;
+        margin-right: 0.7rem;
+        &.selected {
+            border-width: 2px;
+        }
+        &:last-child {
+            margin-right: 0;
+        }
+    }
+}
+
+::-webkit-scrollbar-button {
+    display: none;
+}
+
+::-webkit-scrollbar,
+::-webkit-scrollbar-track {
+    background-color: transparent;
+    height: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background-color: #333;
+    border-radius: 5px;
+}

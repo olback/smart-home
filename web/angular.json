@@ -54,6 +54,7 @@
               "src/assets"
             ],
             "styles": [
+              "./node_modules/@angular/material/prebuilt-themes/indigo-pink.css",
               "src/styles.scss"
             ],
             "scripts": []
@@ -94,7 +95,8 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
             "servePath": "/app/",
-            "browserTarget": "smart-home:build"
+            "browserTarget": "smart-home:build",
+            "host": "0.0.0.0"
           },
           "configurations": {
             "production": {
