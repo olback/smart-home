@@ -1,4 +1,11 @@
 #!/bin/sh
 
-scp $1 root@192.168.1.101:/root/
-ssh root@192.168.1.101 /root/$(basename $1)
+set -e
+
+IP='192.168.1.155'
+BASE_PATH='/root/'
+SSH_USER='root'
+
+scp $1 $SSH_USER@$IP:$BASE_PATH/
+ssh $SSH_USER@$IP $BASE_PATH/$(basename $1)
+
